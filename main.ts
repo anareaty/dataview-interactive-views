@@ -1635,7 +1635,7 @@ class API {
 	async newEntryButton(args: {noteName:string; noteTemplate:string; noteFolder:string}, container: HTMLElement) {
 		const { noteName, noteTemplate, noteFolder } = args
 
-		const checkIfExist = (num: number) => {
+		const checkIfExist = (num: number): string => {
 			let numString = ""
 			if (num > 0) {numString = " " + num}
 			let path = noteName + numString + ".md"
