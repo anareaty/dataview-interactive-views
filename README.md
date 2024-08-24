@@ -1,96 +1,204 @@
-# Obsidian Sample Plugin
+# Интерактивные таблицы для Dataview
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+https://github.com/user-attachments/assets/0855c051-33db-4808-ac86-1928d32c5353
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+## Описание
 
-**Note:** The Obsidian API is still in early alpha and is subject to change at any time!
+Этот плагин предназначен для использования в приложении Obsidian с плагином Dataview. С помощью Dataview вы можете создавать таблицы и списки из заметок, но их нельзя редактировать. Этот плагин позволяет вам создавать динамические интерактивные представления с несколькими дополнительными опциями:
+- можно фильтровать таблицы по свойствам с помощью кнопок фильтрации;
+- можно использовать пагинацию, чтобы разнести записи на отдельные страницы;
+- можно легко переключаться между представлениями таблиц, карточек и списков;
+- можно редактировать свойства прямо из таблицы, не открывая заметку;
+- можно отображать свойства как изображения, функциональные чекбоксы и ползунки;
+- можно использовать разные цвета для разных значений свойств;
+- можно обновлять представление с помощью специальной кнопки;
+- можно добавить кнопку для создания новой заметки;
+- можно делать все это с минимальным редактированием кода.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Как настроить
 
-## First time developing plugins?
+1. Установите плагин Dataview и включите javascript в настройках плагина.
+2. Скопируйте код ниже в заметку Obsidian:
 
-Quick starting guide for new plugin devs:
+````
+```dataviewjs
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+// Выберите и отфильтруйте страницы как обычно с помощью dataviewjs.
 
-## Releasing new releases
+let pages = dv.pages()
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+// Общие настройки представления
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+const settings = {
+    "entries on page": 10,
+    "full width": true,
+    "add new note button": true,
+}
 
-## Adding your plugin to the community plugin list
+// Настройки свойств
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+const props = [
+  {
+    prop: "file.link", 
+    name: "Name",
+    filter: true,
+    column: true
+  },
+  {
+    prop: "tags",
+    filter: true,
+    column: true
+  }
+] 
 
-## How to use
+let api = app.plugins.plugins["dataview-interactive-views"].api
+await api.renderView(settings, props, pages, dv)
+```
+````
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+6. Отредактируйте код в соответствии с вашими потребностями (см. ниже).
 
-## Manually installing the plugin
+## Как редактировать
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+Вы можете изменить представление, отредактировав объект "settings" и массив "props".
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+### Общие настройки
 
-## Funding URL
+Объект "settings" содержит общие настройки представления. Он может содержать несколько необязательных параметров:
 
-You can include funding URLs where people who use your plugin can financially support it.
+`"entries on page": <number>` — описывает, сколько записей должно быть на одной странице. Если вы пропустите этот параметр, пагинации не будет.
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+`"full width": true` — если вы хотите, чтобы таблица заполняла всю ширину страницы.
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
+`add new note button": true` - если вы хотите добавить кнопку для создания новой заметки.
+
+Если вы добавляете кнопку для создания заметки, вы также можете добавить параметры для новой заметки (необязательно).
+
+`new note name: <string>` - название новой заметки.
+
+`new note folder: <string>` - папка для создания новой заметки.
+
+`new note template: <string>` - шаблон заметки.
+
+Вы также можете изменить положение изображений карточек, добавив:
+
+`"cards image position": "horizontal"`
+
+В результате ваши настройки могут выглядеть следующим образом, например:
+
+```js
+const settings = {
+"entries on page": 10,
+"cards image position": "horizontal",
+"full width": true,
+"add new note button": true,
+"new note name": "New book",
+"new note folder": "Books",
+"new note template": "Book template"
 }
 ```
 
-If you have multiple URLs, you can also do:
+### Настройки свойств
 
-```json
+Массив "props" описывает, какие свойства отображаются в представлении. Каждое свойство имеет свой собственный объект, содержащий несколько атрибутов. Например:
+
+```
 {
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
+  prop: "Имя свойства",
+  filter: true,
+  column: true
+}
+```
+Вот некоторые параметры, которые вы можете добавить к объекту свойства:
+
+`prop: <string>` — имя свойства (обязательно).
+
+`filter: true` — добавляет сверху кнопку фильтрации для этого свойства.
+
+`column: true` — добавляет столбец в таблице для этого свойства.
+
+`name: <string>` — если вы хотите использовать альтернативное имя для этого свойства в заголовке таблицы и на кнопке фильтрации.
+
+`icon: <string>` — если вы хотите добавить иконку к имени свойства в заголовке таблицы и на кнопке фильтрации. Поддерживаются только встроенные значки lucide. Например, `icon: "send"`.
+
+`image: true` — свойство будет отображаться как изображение. Для этого оно должен содержать либо внешнюю url-ссылку, либо вики-ссылку на локальное изображение.
+
+`width: <number>` — задает ширину изображения.
+
+`fuzzySearch: true` — разрешает нечеткий поиск в модальном окне фильтрации.
+
+`span: true` — оборачивает значения свойств в теги span с уникальными именами классов. Позволяет использовать css для добавления разных цветов для разных значений.
+
+`multiSelect: true` — позволяет выбирать несколько значений в модальном окне фильтрации. Работает только со свойствами типа "список".
+
+`editButton: "select"` — позволяет выбирать только один из существующих вариантов в модальном окне редактирования. Работает со свойствами типа "текст" или "список".
+
+`slice: [0, 2],` — отображать только первые два символа значения свойства (полезно для свойств, начинающихся с эмодзи).
+
+`textHeight: <number>` — задает максимальную высоту текстового свойства в таблице.
+
+`alignBottom: true` — в представлении карточек сдвинуть это свойство и все свойства после него в нижнюю часть карточки.
+
+`hideOnMobile: true` — не показывать это свойство в таблице на мобильном.
+
+`hideInCardsView: true` — не показывать это свойство, когда выбрано отображение с виде карточек.
+
+`ignoreFilter: true` — не фильтровать заметки по этому свойству. При этом вы всё ещё можете задать кнопку фильтрации, которая будет изменять значения во фронтмэттере, но они не будут влиять на отображение. Это может быть полезно, если вы хотите прописать собственные кастомные фильтры.
+
+Помимо обычных свойств вы также можете использовать некоторые свойства файла, такие как "file.link" или "file.path". Обратите внимание, что большинство из них пока не редактируются, за исключением имени заметки. Вы можете использовать только свойства файла первого уровня.
+
+Вы можете использовать свойство `file.tasks`, чтобы получить список задач из заметок с активными чекбоксами, а кнопка фильтрации позволит переключаться между просмотром всех задач, только выполненных или только не выполненных. Но поддержка задач пока что минимальна и может немного глючить.
+
+Еще две штуки, кроме свойств, которые вы можете поместить в массив "props", это прогресс-бар и ползунок.
+
+Прогресс-бар позволяет вам видеть прогресс выполнения всех задач в заметке. Он описывается следующим образом:
+
+```
+{
+    prop: "taskProgress",
+    column: true  
 }
 ```
 
-## API Documentation
+Ползунок позволяет редактировать свойства перетаскиванием. Это может быть полезно, например, для отслеживания того, сколько глав книги вы прочитали и т.д. Он описывается так:
 
-See https://github.com/obsidianmd/obsidian-api
+```
+  {
+    prop: "slider",
+    column: true,
+    propVal: "Value",
+    propMax: "Max"
+}
+```
+
+Для ползунка требуются два свойства: максимальное значение и текущее значение. Если в заметке нет максимального значения, вы можете задать его, щелкнув по ячейке ползунка. Двойной щелчок по ползунку позволяет ввести значение как число.
+
+## Дополнительные стили
+
+Использование этого скрипта добавляет некоторые дополнительные свойства в заметку с представлением. Они необходимы для хранения информации о фильтрах и других выбранных параметрах. При желании вы можете скрыть эти свойства, добавив css-snippet:
+
+```css
+/* Скрыть свойства интерактивной таблицы */
+
+.metadata-property[data-property-key*="filter"],
+.metadata-property[data-property-key="view"],
+.metadata-property[data-property-key="pagination"],
+.metadata-property[data-property-key="search"],
+.metadata-property[data-property-key="show_search"],
+.metadata-property[data-property-key="sort"],
+.metadata-property[data-property-key="sort_direction"] {
+  display: none;
+}
+```
+
+Вы также можете использовать css для изменения цветов определенных значений свойств. Для этого необходимо добавить параметр `span: true` к объекту свойства. Затем необходимо создать css-сниппет. Например, у вас есть свойство «Статус» с возможными значениями «в процессе» и «завершено», и вы хотите, чтобы «в процессе» выделялось красным, а «завершено» — зеленым цветом. Вы можете использовать такой css:
+
+```css
+.dv-tag-в-процессе {
+background-color: rgba(var(--color-red-rgb), .2);
+}
+
+.dv-tag-завершено {
+background-color: rgba(var(--color-green-rgb), .2);
+}
+```
