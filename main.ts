@@ -588,7 +588,15 @@ class API {
 		}, 250)
 	}
 
-	async refreshViewImmediately() {
+	async forceRefreshView() {
+		Dataview.getAPI().index.touch()
+		setTimeout(async() => {
+			this.app.workspace.trigger("dataview:refresh-views");   
+		}, 250)
+	}
+
+	async forceRefreshViewImmediately() {
+		Dataview.getAPI().index.touch()
 		this.app.workspace.trigger("dataview:refresh-views");
 	}
 
@@ -1702,7 +1710,7 @@ class API {
 		button.append("↺")
 		button.className = "dvit-button"
 		button.onclick = async () => {
-			await this.refreshViewImmediately()
+			await this.forceRefreshViewImmediately()
 		}
 		container.append(button)
 	}
@@ -3121,22 +3129,12 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 
 		let api = new API(this.app, this)
-
-
-		console.log(Dataview.getAPI())
-
-
-
+		this.api = api
+		api.forceRefreshViewImmediately()
 		
-
-		
-		
-		
-
 		this.registerEvent(
-			//@ts-ignore
-			this.app.metadataCache.on("dataview:index-ready", async () => {
-				this.api = api
+			
+			this.app.metadataCache.on("dataview:index-ready" as any, async () => {
 				await api.refreshView()
 			})
 		)
