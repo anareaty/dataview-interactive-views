@@ -1,6 +1,5 @@
-import { App, Editor, MarkdownView, Modal, Notice, FuzzySuggestModal, Plugin, PluginSettingTab, setTooltip, Setting, SuggestModal, setIcon, getIcon, FuzzyMatch, TFile, TAbstractFile } from 'obsidian';
-
-// Remember to rename these classes and interfaces!
+import { App, Modal, FuzzySuggestModal, Plugin, PluginSettingTab, setTooltip, Setting, SuggestModal, setIcon, getIcon, FuzzyMatch, TFile} from 'obsidian';
+import * as Dataview from "obsidian-dataview"
 
 interface MyPluginSettings {
 	mySetting: string;
@@ -151,8 +150,7 @@ class MyMultiSuggestModal extends Modal {
 		new Setting(contentEl).addButton((btn) => btn
 		.setButtonText("Clear all")
 		.onClick(() => {
-			let toggles = document.querySelectorAll(".select-line .filter-checkbox.is-enabled")
-			//@ts-ignore
+			let toggles = document.querySelectorAll(".select-line .filter-checkbox.is-enabled") as NodeListOf<HTMLInputElement>
 			for (let toggle of toggles) {
 				toggle.click()
 			}
@@ -420,6 +418,64 @@ class MyDateInputModal extends Modal {
 
 
 
+
+class MyDateTimeInputModal extends Modal {
+	resolve: any
+	reject:any
+	name: string
+	defaultVal: string
+	result: string
+	constructor(app: App, name: string, defaultVal: string, resolve: any, reject:any) {
+	  super(app);
+	  this.resolve = resolve
+	  this.reject = reject
+	  this.name = name
+	  this.defaultVal = defaultVal 
+	  this.eventInput = this.eventInput.bind(this)
+	}
+	eventInput(e: KeyboardEvent) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			this.resolve(this.result)
+			this.close()
+		}
+	}
+	onOpen() {
+		const {contentEl} = this
+		contentEl.classList.add("date-input-modal")
+		contentEl.createEl("h1", {text: this.name})
+		const inputSetting = new Setting(contentEl)
+		inputSetting.settingEl.style.display = "grid";
+		inputSetting.addText((text) => {
+			text.setValue(this.defaultVal)
+			this.result = this.defaultVal
+			text.onChange((value) => {
+			   this.result = value
+			})
+			text.inputEl.style.width = "100%";
+			text.inputEl.type = "datetime-local"
+		})
+		new Setting(contentEl).addButton((btn) => btn
+		.setButtonText("Сохранить")
+		.setCta()
+		.onClick(() => {
+			this.resolve(this.result)
+			this.close()
+		}))
+		contentEl.addEventListener("keydown", this.eventInput)
+	}
+	onClose() {
+		const {contentEl} = this
+		contentEl.empty()
+		this.contentEl.removeEventListener("keydown", this.eventInput)
+		this.reject("Not submitted") 
+	} 
+}
+
+
+
+
+
 class TaskListInputModal extends Modal {
 	taskList: HTMLElement
 	constructor(app: App, taskList: HTMLElement) {
@@ -472,6 +528,7 @@ interface PropObject {
 	hideInCardsView: boolean;
 	editButton: string;
 	alignBottom: boolean;
+	ignoreFilter: boolean;
 }
 
 interface Link {
@@ -519,18 +576,6 @@ class API {
 		this.plugin = plugin
 	}
 
-	async createTestButton (text: string, container: HTMLElement, current: any) {
-
-		let button = container.createEl("button", {text: "Click me!"})
-		button.onclick = async () => {
-			
-			let link = current.file.link
-			
-
-			
-			
-		}
-	}
 
 
 
@@ -539,9 +584,12 @@ class API {
 
 	async refreshView() {
 		setTimeout(async() => {
-			//@ts-ignore
-			await this.app.commands.executeCommandById("dataview:dataview-force-refresh-views")
+			this.app.workspace.trigger("dataview:refresh-views");   
 		}, 250)
+	}
+
+	async refreshViewImmediately() {
+		this.app.workspace.trigger("dataview:refresh-views");
 	}
 
 
@@ -595,6 +643,15 @@ class API {
 		if (!defaultVal) {defaultVal = ""}
 		let data = new Promise((resolve, reject) => {
 			new MyDateInputModal(this.app, name, defaultVal, resolve, reject).open()  
+		}).catch((e) => {console.log(e)})
+		return data
+	}
+
+
+	async dateTimeInput(name: string, defaultVal: string) {
+		if (!defaultVal) {defaultVal = ""}
+		let data = new Promise((resolve, reject) => {
+			new MyDateTimeInputModal(this.app, name, defaultVal, resolve, reject).open()  
 		}).catch((e) => {console.log(e)})
 		return data
 	}
@@ -766,7 +823,7 @@ class API {
 	
 	getValues(prop: string) {
 		//@ts-ignore
-		let values = this.app.metadataCache.getFrontmatterPropertyValuesForKey(prop)
+		let values: any[] = this.app.metadataCache.getFrontmatterPropertyValuesForKey(prop)
 		if (prop == "tags") {
 			values = values.map(v => v.replace("#", ""))  
 			values.sort()
@@ -871,6 +928,7 @@ class API {
 		setIcon(iconWrapper, icon)
 		button.append(iconWrapper)
 		button.className = "dvit-button sort-button"
+
 		button.onclick = async () => {
 			let prop = await this.suggester(propVals, propNames)
 			if (prop == "-") {
@@ -1003,7 +1061,9 @@ class API {
 	async filterProps(props: PropObject[], pages: any[], id: string) {
 		const {dv} = this
 		for (let prop of props) {
-			pages = await this.filter(prop, pages, id)
+			if (!prop.ignoreFilter) {
+				pages = await this.filter(prop, pages, id)
+			}
 		}
 		let search = dv.current()["search_" + id]
 		if (search && search.length > 0) {
@@ -1316,8 +1376,11 @@ class API {
 			values.unshift("-")
 			values.unshift("all")
 			
-			//@ts-ignore
-			let dateFormat = this.app.plugins.plugins.dataview.settings.defaultDateFormat
+		
+			let dateFormat = Dataview.getAPI().settings.defaultDateFormat
+
+
+
 			let locale = localStorage.getItem('language')
 			
 			let valueNames = values.map(v => {
@@ -1639,7 +1702,7 @@ class API {
 		button.append("↺")
 		button.className = "dvit-button"
 		button.onclick = async () => {
-			await this.refreshView()
+			await this.refreshViewImmediately()
 		}
 		container.append(button)
 	}
@@ -1898,7 +1961,8 @@ class API {
 	// Progress bar based on task completion in note
 
 	taskProgress(p: any) {
-		let tasks = p.file.tasks.filter(t => t.children.length == 0)
+		let tasks: any[] = p.file.tasks
+		tasks = tasks.filter(t => t.children.length == 0)
 		let completed = tasks.filter(t => t.completed == true)
 		let max = tasks.length
 		let value = completed.length
@@ -2310,12 +2374,26 @@ class API {
 						editButton.setAttribute('data-type', 'date')
 
 						if (propVal) {
-							//@ts-ignore
-							let dateFormat = this.app.plugins.plugins.dataview.settings.defaultDateFormat
+							let dateFormat = Dataview.getAPI().settings.defaultDateFormat
 							let locale = localStorage.getItem('language')
 							propVal = propVal.toFormat(dateFormat, {locale: locale})
 						} 
 					}
+
+
+					if (propType == "datetime") {
+						//editButton.classList.add("edit-button-date")
+						editButton.setAttribute('data-type', 'datetime')
+
+						if (propVal) {
+							let dateFormat = Dataview.getAPI().settings.defaultDateFormat + " HH: mm"
+							let locale = localStorage.getItem('language')
+							propVal = propVal.toFormat(dateFormat, {locale: locale})
+						} 
+					}
+
+
+
 
 					if (propType == "number") {
 						editButton.setAttribute('data-type', 'number')
@@ -2344,7 +2422,7 @@ class API {
 
 		
 
-					if (!editButton.innerHTML || editButton.innerHTML == "null" || editButton.innerHTML == "undefined") {
+					if (!editButton.innerHTML || editButton.innerHTML == "null" || editButton.innerHTML == "undefined" || editButton.innerHTML == "<ul></ul>") {
 						editButton.innerHTML = propName
 						if (propItem.name) editButton.innerHTML = propItem.name
 						if (propItem.icon) {
@@ -2525,9 +2603,9 @@ class API {
 			button.onclick = async (event) => {
 				let target = event.target as HTMLElement
 				if (target.localName != "a") {
-					let path = button.getAttribute("data-path")
-					let prop = button.getAttribute("data-prop")
-					let type = button.getAttribute("data-type")
+					let path = button.getAttribute("data-path") ?? ""
+					let prop = button.getAttribute("data-prop") ?? ""
+					let type = button.getAttribute("data-type") ?? ""
 					await this.editProp(type, path, prop)
 				} 
 			}
@@ -2555,7 +2633,7 @@ class API {
 				await this.editSlider(slider)
 			}
 			slider.ondblclick = async () => {
-				await this.editSliderVal(slider, dv)
+				await this.editSliderVal(slider)
 			}
 
 		}
@@ -2675,7 +2753,7 @@ class API {
 updateSlider (slider: HTMLInputElement) {
     let value = slider.value
     let max = slider.max
-    let percents = this.getSliderPercents(value, max)
+    let percents = this.getSliderPercents(Number(value), Number(max))
     let imageColor = "var(--color-red)"
     if (percents > 25) imageColor = "var(--color-yellow)" 
     if (percents > 50) imageColor = "var(--color-green)"
@@ -2712,10 +2790,9 @@ async editSlider (slider: HTMLInputElement) {
 }
 
 async editSliderVal (slider: HTMLInputElement) {
-	const {dv} = this
-    let path = slider.getAttribute("data-path")
-    let prop = slider.getAttribute("data-prop")
-    await this.editProp("number", path, prop, dv)
+    let path = slider.getAttribute("data-path") ?? ""
+    let prop = slider.getAttribute("data-prop") ?? ""
+    await this.editProp("number", path, prop)
 }
 
 
@@ -2880,6 +2957,17 @@ async editProp (type: string, path: string, prop: string) {
         if (val === undefined) val = prevVal
 
         if (val == "") val = null
+    } else if (type == "datetime") {
+     
+        if (prevVal) {
+            prevVal = prevVal.toISODate()
+        }
+        
+        val = await this.dateTimeInput(prop, prevVal)
+
+        if (val === undefined) val = prevVal
+
+        if (val == "") val = null
     } else if (type == "task-progress") {
         this.taskListModal(page)
     }
@@ -2933,15 +3021,15 @@ async editProp (type: string, path: string, prop: string) {
 
 	async renderView (settings: any, props: any, pages: any, dv:any) {
 
+		console.log("render")
+
 		this.dv = dv
 		let id = settings["id"] ?? "no-id"
 		let viewContainer = dv.container.createEl("div", {cls: "dvit-view-id-" + id})
-
 		let sortProp = dv.current()["sort_" + id]
 		let sortDir = dv.current()["sort_direction_" + id]
 		if (!sortDir) sortDir = "asc"
 		pages = this.sortByProp(pages, sortProp, sortDir)
-
 		let view = dv.current()["view_" + id]
 		let cardsPosition = settings["cards image position"]
 		let paginationNum = settings["entries on page"]
@@ -2992,10 +3080,14 @@ async editProp (type: string, path: string, prop: string) {
 			await this.createList(props, pages, filteredPages, paginationNum, viewContainer, id)
 		}
 
+		
+
 		let search = viewContainer.querySelector(".dvit-search-input")
 		if(search) {
 			search.focus()
 		} 
+
+		
 	}
 
 
@@ -3027,19 +3119,27 @@ export default class MyPlugin extends Plugin {
 	api?: API 
 
 	async onload() {
-		await this.loadSettings();
 
-		this.api = new API(this.app, this)
+		let api = new API(this.app, this)
+
+
+		console.log(Dataview.getAPI())
+
+
 
 		
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		/*
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-		*/
+		
+		
+		
+
+		this.registerEvent(
+			//@ts-ignore
+			this.app.metadataCache.on("dataview:index-ready", async () => {
+				this.api = api
+				await api.refreshView()
+			})
+		)
 
 	}
 

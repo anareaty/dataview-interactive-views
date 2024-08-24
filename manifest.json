@@ -1,11 +1,11 @@
 {
-	"id": "interactive-views",
-	"name": "Interactive Views",
-	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"id": "dataview-interactive-views",
+	"name": "Dataview Interactive Views",
+	"version": "1.0.1",
+	"minAppVersion": "1.6.0",
+	"description": "Create interactive views with dataview.",
+	"author": "Anareaty",
+	"authorUrl": "https://github.com/anareaty",
+	"fundingUrl": "",
 	"isDesktopOnly": false
 }

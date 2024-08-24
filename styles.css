@@ -120,6 +120,7 @@ button.dvit-button:hover {
   
 .edit-button:has(img:only-child) {
     padding: 0 !important;
+    max-width: unset !important;
 }
 
 .edit-button:hover {
