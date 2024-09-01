@@ -1306,8 +1306,11 @@ class API {
 				values = valueOptions.filter(v => v)
 			}
 
-			values.unshift("-")
-			values.unshift("all")
+			if (!p.ignoreFilter) {
+				values.unshift("-")
+				values.unshift("all")
+			}
+
 
 			let valueNames = values.map((v) => {
 				if (v == "all") return "-all-"
