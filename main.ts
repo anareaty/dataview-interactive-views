@@ -523,7 +523,11 @@ interface PropObject {
 	replace: any[];
 	image: boolean;
 	width: number;
+	maxWidth: number;
+	minWidth: number;
 	height: number;
+	maxHeight: number;
+	minHeight: number;
 	prepend: any;
 	hideInCardsView: boolean;
 	editButton: string;
@@ -2455,11 +2459,27 @@ class API {
 					let style = ""
 
 					if (propItem.width) {
-						style = style + "max-width: " + propItem.width + "px; "
+						style = style + "width: " + propItem.width + "px; "
+					}
+
+					if (propItem.maxWidth) {
+						style = style + "max-width: " + propItem.maxWidth + "px; "
+					}
+
+					if (propItem.minWidth) {
+						style = style + "min-width: " + propItem.minWidth + "px; "
 					}
 
 					if (propItem.height) {
-						style = style + "max-height: " + propItem.height + "px; overflow-y: scroll; "
+						style = style + "height: " + propItem.height + "px; overflow-y: scroll; "
+					}
+
+					if (propItem.maxHeight) {
+						style = style + "max-height: " + propItem.maxHeight + "px; overflow-y: scroll; "
+					}
+
+					if (propItem.minHeight) {
+						style = style + "min-height: " + propItem.minHeight + "px; overflow-y: scroll; "
 					}
 
 

@@ -3,14 +3,16 @@
 .filter-button-icon,
 .search-button-icon,
 .change-view-button-icon,
-.inline-icon {
+.inline-icon,
+.header-icon {
     --icon-size: 1em;
     position: relative;
     top: 2px;
 }
 
 .inline-icon:not(:only-child),
-.filter-button-icon:not(:only-child) {
+.filter-button-icon:not(:only-child),
+.header-icon:not(:only-child) {
     margin-right: 4px;
 }
     
