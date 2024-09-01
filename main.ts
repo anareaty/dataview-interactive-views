@@ -516,6 +516,7 @@ interface PropObject {
 	icon: string;
 	fuzzySearch: boolean; 
 	valueOptions: string[];
+	defaultValue: string;
 	hideOnMobile: boolean;
 	propVal: string;
 	propMax: string;
@@ -1000,6 +1001,8 @@ class API {
 	async filterButton(p: PropObject, pages: any[], container: HTMLElement, id: string) {
 		const {dv} = this
 		let {prop, multiSelect, name, buttonName} = p
+		let current = dv.current()
+		let propName = "filter_" + id + "_" + prop
 		
 		if (!buttonName) {
 		  buttonName = prop
@@ -1007,9 +1010,12 @@ class API {
 			buttonName = name
 		  }
 		}
+
+		if (p.ignoreFilter) {
+			buttonName = current[propName]
+		}
 		
-		let current = dv.current()
-		let propName = "filter_" + id + "_" + prop
+		
 		let buttonClass = "dvit-button"
 	
 		if (current[propName] && current[propName] != "all" && current[propName].length != 0) {
@@ -1017,6 +1023,10 @@ class API {
 		}
 		if (propName == "filter_" + id +"_file.tasks" && current[propName]) {
 			buttonClass = "dvit-button button-selected"
+		}
+
+		if (p.ignoreFilter && current[propName] == p.defaultValue) {
+			buttonClass = "dvit-button"
 		}
 		
 		if (multiSelect) {
