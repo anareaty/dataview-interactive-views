@@ -10,6 +10,10 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 }
 
 
+declare global {
+    interface Window { DIViews: any; }
+}
+window.DIViews = window.DIViews || {}
 
 
 class MySuggestModal extends SuggestModal<string> {
@@ -2891,8 +2895,6 @@ async editProp (type: string, path: string, prop: string) {
 
         let values = this.getValues(prop)
 
-
-        console.log(values)
         if (!values) values = []
 
         let propItem = this.props.find(p => p.prop == prop)
@@ -3061,9 +3063,7 @@ async editProp (type: string, path: string, prop: string) {
 
 
 	async renderView (settings: any, props: any, pages: any, dv:any) {
-
-		console.log("render")
-
+		if (!dv.current()) return
 		this.dv = dv
 		let id = settings["id"] ?? "no-id"
 		let viewContainer = dv.container.createEl("div", {cls: "dvit-view-id-" + id})
@@ -3163,12 +3163,30 @@ export default class MyPlugin extends Plugin {
 
 		let api = new API(this.app, this)
 		this.api = api
-		api.forceRefreshViewImmediately()
+		window.DIViews = api
+
+
+
+		
+	
+
+
+
+
+
+
+
+		if (Dataview.getAPI()) {
+			api.forceRefreshViewImmediately()
+		}
+
+		
 		
 		this.registerEvent(
 			
 			this.app.metadataCache.on("dataview:index-ready" as any, async () => {
-				await api.refreshView()
+				//await api.refreshView()
+				await api.forceRefreshViewImmediately()
 			})
 		)
 
