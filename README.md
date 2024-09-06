@@ -52,8 +52,7 @@ const props = [
   }
 ] 
 
-let api = app.plugins.plugins["dataview-interactive-views"].api
-await api.renderView(settings, props, pages, dv)
+await DIViews.renderView(settings, props, pages, dv)
 ```
 ````
 
