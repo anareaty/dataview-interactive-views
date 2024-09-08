@@ -57,6 +57,7 @@ class MySuggestModal extends SuggestModal<string> {
 	onChooseSuggestion(val: string) {
 		this.resolve(val)
 	} 
+
 }
 
 
@@ -109,7 +110,8 @@ class MyFuzzySuggestModal extends FuzzySuggestModal<string> {
 	}
 	onChooseItem(val: string) {
 		this.resolve(val)
-	}   
+	} 
+
 }
 
 
@@ -538,6 +540,7 @@ interface PropObject {
 	editButton: string;
 	alignBottom: boolean;
 	ignoreFilter: boolean;
+	lines: number;
 }
 
 interface Link {
@@ -783,7 +786,7 @@ class API {
 			type = "datetime"
 		} else if (prop == "file.starred") {
 		  type = "checkbox"
-		} else if (prop == "taskProgress" || prop == "slider") {
+		} else if (prop == "taskProgress" || prop == "slider" || prop == "excerpt") {
 		  type = "no prop"
 		}
 		if (!type) type = "text"
@@ -2001,6 +2004,38 @@ class API {
 	}
 
 
+	renderMarkdown(text: string) {
+		let renderedElement = this.dv.span(text)
+
+		let html = renderedElement.outerHTML
+
+
+		
+		html = html.replaceAll("\n", "")
+		
+		renderedElement.remove()
+		return html
+	}
+
+
+
+
+	async getExcerpt(page: any) {
+		let dv = this.dv
+		if (page.file.path == dv.current().file.path) {
+			return ""
+		}
+		let file = this.app.vault.getAbstractFileByPath(page.file.path) as TFile
+		let content = await this.app.vault.cachedRead(file)
+		content = content.replace(/^---\n.*?\n---/ms, "")
+		content = content.replace(/(```)(dataview\n)(.*?)(\n```)/ms, "````\n```dataview```\n````")
+		content = content.replace(/(```)(dataviewjs\n)(.*?)(\n```)/ms, "````\n```dataviewjs```\n````")
+		content = content.slice(0, 1000)
+		let contentHTML = this.renderMarkdown(content)
+		return contentHTML
+	}
+
+
 
 
 
@@ -2187,8 +2222,8 @@ class API {
 
 
 
-		let rows = filteredPages.map(p =>
-			tableProps.map(propItem => {
+		let rows = await Promise.all(filteredPages.map(async (p) =>
+			await Promise.all(tableProps.map(async (propItem) => {
 				let propName = propItem.prop
 				let propType = this.getPropType(propName)
 				let propVal = this.getVal(p,propName)
@@ -2353,6 +2388,14 @@ class API {
 				}
 
 
+
+				if (propName == "excerpt") {
+					propVal = await this.getExcerpt(p)
+				}
+
+				
+
+
 			/* Push property and everything after it to the bottom of the card */
 
 				
@@ -2377,62 +2420,62 @@ class API {
 
 		
 
-				if (!propName.startsWith("file.")) {
+					if (!propName.startsWith("file.")) {
 
-					if (propItem.editButton == "select" && (propType == "text" || propType == "multitext")) {
-						//editButton.classList.add("edit-button-select")
-						editButton.setAttribute('data-type', 'select')
+						if (propItem.editButton == "select" && (propType == "text" || propType == "multitext")) {
+							//editButton.classList.add("edit-button-select")
+							editButton.setAttribute('data-type', 'select')
+
+						}
+
+						if (propType == "text" && propItem.editButton != "select") {
+							editButton.setAttribute('data-type', 'text')
+
+						}
+
+
+						if (propType == "multitext" && propItem.editButton != "select") {
+							//editButton.classList.add("edit-button-list")
+							editButton.setAttribute('data-type', 'list')
+
+						}
+
+
+						if (propType == "date") {
+							//editButton.classList.add("edit-button-date")
+							editButton.setAttribute('data-type', 'date')
+
+							if (propVal) {
+								let dateFormat = Dataview.getAPI().settings.defaultDateFormat
+								let locale = localStorage.getItem('language')
+								propVal = propVal.toFormat(dateFormat, {locale: locale})
+							} 
+						}
+
+
+						if (propType == "datetime") {
+							//editButton.classList.add("edit-button-date")
+							editButton.setAttribute('data-type', 'datetime')
+
+							if (propVal) {
+								let dateFormat = Dataview.getAPI().settings.defaultDateFormat + " HH: mm"
+								let locale = localStorage.getItem('language')
+								propVal = propVal.toFormat(dateFormat, {locale: locale})
+							} 
+						}
+
+
+
+
+						if (propType == "number") {
+							editButton.setAttribute('data-type', 'number')
+						}
 
 					}
 
-					if (propType == "text" && propItem.editButton != "select") {
-						editButton.setAttribute('data-type', 'text')
-
-					}
-
-
-					if (propType == "multitext" && propItem.editButton != "select") {
-						//editButton.classList.add("edit-button-list")
-						editButton.setAttribute('data-type', 'list')
-
-					}
-
-
-					if (propType == "date") {
-						//editButton.classList.add("edit-button-date")
-						editButton.setAttribute('data-type', 'date')
-
-						if (propVal) {
-							let dateFormat = Dataview.getAPI().settings.defaultDateFormat
-							let locale = localStorage.getItem('language')
-							propVal = propVal.toFormat(dateFormat, {locale: locale})
-						} 
-					}
-
-
-					if (propType == "datetime") {
-						//editButton.classList.add("edit-button-date")
-						editButton.setAttribute('data-type', 'datetime')
-
-						if (propVal) {
-							let dateFormat = Dataview.getAPI().settings.defaultDateFormat + " HH: mm"
-							let locale = localStorage.getItem('language')
-							propVal = propVal.toFormat(dateFormat, {locale: locale})
-						} 
-					}
-
-
-
-
-					if (propType == "number") {
-						editButton.setAttribute('data-type', 'number')
-					}
-
-				}
-
-				if (propName == "file.link" || propName == "file.name") {
-					editButton.setAttribute('data-type', 'file name')
-				}   				
+					if (propName == "file.link" || propName == "file.name") {
+						editButton.setAttribute('data-type', 'file name')
+					}   				
 
 					editButton.setAttribute('data-path', p.file.path)
 					editButton.setAttribute('data-prop', propName)
@@ -2446,7 +2489,12 @@ class API {
 						}
 						propVal = propArr.outerHTML
 					}
+
+
+
 					editButton.innerHTML = propVal
+
+					
 
 
 		
@@ -2548,6 +2596,12 @@ class API {
 
 
 
+				if (propName == "excerpt") {
+					editButton.setAttribute('data-type', 'excerpt')
+				}
+
+
+
 					if (propItem.alignBottom) {
 						propVal.classList.add("align-bottom")
 					} 
@@ -2605,6 +2659,9 @@ class API {
 
 				return propVal
 			}))
+		))
+
+
 		
 
 
@@ -2632,6 +2689,9 @@ class API {
 			tableWrapper.classList.add("cards")
 			if (cardsView.position) {
 				tableWrapper.classList.add("cards-" + cardsView.position)
+			}
+			if (cardsView.cardsWidth) {
+				tableWrapper.classList.add("cards-width-" + cardsView.cardsWidth)
 			}
 		}
 
@@ -2777,6 +2837,38 @@ class API {
 
 					await this.refreshView()
 				}
+			}
+		}
+
+
+
+
+
+
+		let excerpts = document.querySelectorAll(".edit-button[data-type='excerpt']")
+		for (let excerpt of excerpts) {
+			(excerpt as HTMLElement).onclick = async (e) => {
+				let leaf
+				if (e.ctrlKey && e.shiftKey && e.altKey) {
+					// Открыть в новом окне
+					leaf = this.app.workspace.getLeaf("window")
+
+				} else if (e.ctrlKey && e.altKey) {
+					// Открыть справа
+					leaf = this.app.workspace.getLeaf("split")
+				}
+				else if (e.ctrlKey) {
+					// Открыть в новой вкладке
+					leaf = this.app.workspace.getLeaf("tab")
+				}
+				else {
+					// Открыть в той же вкладке
+					leaf = this.app.workspace.getLeaf()
+				}
+
+				let path = excerpt.getAttribute("data-path") ?? ""
+				let file = this.app.vault.getAbstractFileByPath(path) as TFile
+				leaf.openFile(file)
 			}
 		}
 		
@@ -3073,6 +3165,7 @@ async editProp (type: string, path: string, prop: string) {
 		pages = this.sortByProp(pages, sortProp, sortDir)
 		let view = dv.current()["view_" + id]
 		let cardsPosition = settings["cards image position"]
+		let cardsWidth = settings["cards width"]
 		let paginationNum = settings["entries on page"]
 		let addNewButton = settings["add new note button"]
 		let fullWidth = settings["full width"]
@@ -3115,7 +3208,7 @@ async editProp (type: string, path: string, prop: string) {
 			await this.createTable(props, filteredPages, paginationNum, viewContainer, id, fullWidth, null)
 		
 		} else if (view == "cards") {
-			await this.createTable(props, filteredPages, paginationNum, viewContainer, id, fullWidth, {cards: true, position: cardsPosition})
+			await this.createTable(props, filteredPages, paginationNum, viewContainer, id, fullWidth, {cards: true, position: cardsPosition, cardsWidth})
 		
 		} else if (view == "list") {
 			await this.createList(props, pages, filteredPages, paginationNum, viewContainer, id)
