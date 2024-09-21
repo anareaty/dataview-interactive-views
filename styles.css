@@ -617,9 +617,11 @@ body
 
 
 
-.cards .edit-button {
-  max-width: 100%;
-}
+    .cards .edit-button {
+      max-width: 100% !important;
+      width: 100% !important;
+      min-width: 100% !important;
+    }
 
 
 
@@ -642,3 +644,18 @@ body
   overflow-y: hidden !important;
 }
 
+
+
+
+.gallery-image img {
+  
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  
+}
+
+.gallery-image{
+  display: inline-block;
+  padding: 3px;
+}

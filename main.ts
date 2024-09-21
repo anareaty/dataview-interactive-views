@@ -513,34 +513,34 @@ class TaskListInputModal extends Modal {
 
 interface PropObject {
 	prop: string;
-	filter: boolean;
-	column: boolean;
-	name: string;
-	span: boolean;
-	multiSelect: boolean;
-	buttonName: string;
-	icon: string;
-	fuzzySearch: boolean; 
-	valueOptions: string[];
-	defaultValue: string;
-	hideOnMobile: boolean;
-	propVal: string;
-	propMax: string;
-	slice: any[];
-	replace: any[];
-	image: boolean;
-	width: number;
-	maxWidth: number;
-	minWidth: number;
-	height: number;
-	maxHeight: number;
-	minHeight: number;
-	prepend: any;
-	hideInCardsView: boolean;
-	editButton: string;
-	alignBottom: boolean;
-	ignoreFilter: boolean;
-	lines: number;
+	filter?: boolean;
+	column?: boolean;
+	name?: string;
+	span?: boolean;
+	multiSelect?: boolean;
+	buttonName?: string;
+	icon?: string;
+	fuzzySearch?: boolean; 
+	valueOptions?: string[];
+	defaultValue?: string;
+	hideOnMobile?: boolean;
+	propVal?: string;
+	propMax?: string;
+	slice?: any[];
+	replace?: any[];
+	image?: boolean;
+	width?: number;
+	maxWidth?: number;
+	minWidth?: number;
+	height?: number;
+	maxHeight?: number;
+	minHeight?: number;
+	prepend?: any;
+	hideInCardsView?: boolean;
+	editButton?: string;
+	alignBottom?: boolean;
+	ignoreFilter?: boolean;
+	lines?: number;
 }
 
 interface Link {
@@ -788,6 +788,8 @@ class API {
 		  type = "checkbox"
 		} else if (prop == "taskProgress" || prop == "slider" || prop == "excerpt") {
 		  type = "no prop"
+		} else if (prop == "has_backlinks") {
+			type = "checkbox"
 		}
 		if (!type) type = "text"
 		return type
@@ -797,13 +799,23 @@ class API {
 
 	getVal(page: any, prop: string) {
 		let val = page[prop]
-	  if (prop.startsWith("file.")) {
-		  let propLevels = prop.split(".")
-		  val = page
-		  for (let level of propLevels) {
-			val = val[level]
-		  }
+		if (prop.startsWith("file.")) {
+			let propLevels = prop.split(".")
+			val = page
+			for (let level of propLevels) {
+				val = val[level]
+			}
 		}
+
+		if (prop == "folder") {
+			if (page.file) {
+				val = page.file.folder + "/"
+			} else if (page.parent) {
+				val = page.parent.path
+			}
+		}
+
+	
 	  if (prop == "tags") val = page.file.etags
 	  return val
 	}
@@ -1056,7 +1068,7 @@ class API {
 				setIcon(iconWrapper, p.icon)
 			} else iconWrapper.append("NO ICON")
 			button.append(iconWrapper)
-			if (buttonName.trim() != "") {
+			if (buttonName && buttonName.trim() != "") {
 				let textWrapper = document.createElement("span")
 				textWrapper.innerHTML = buttonName
 				buttonInner = textWrapper
@@ -1328,7 +1340,10 @@ class API {
 			}
 
 			if (!p.ignoreFilter) {
-				values.unshift("-")
+				if (p.prop != "folder") {
+					values.unshift("-")
+				}
+				
 				values.unshift("all")
 			}
 
@@ -1614,6 +1629,11 @@ class API {
 			let propName = "filter_" + id + "_" + prop
 
 			let values = ["all", "-", "false", "true"]
+
+			if (p.prop == "has_backlinks") {
+				values = ["all", "false", "true"]
+			}
+
 			let val = await suggester(values, values)
 			if (val == "false") val = false
 			if (val == "true") val = true
@@ -2195,7 +2215,7 @@ class API {
 			let prop = propItem.prop
 
 			if (prop == "slider") {
-				prop = propItem.propVal
+				prop = propItem.propVal ?? ""
 			}
 
 			let headerButton = document.createElement("div")
@@ -2232,14 +2252,15 @@ class API {
 
 				if (propType == "multitext" && propItem.slice && propVal && Array.isArray(propVal)) {
 					propVal = propVal.map(p => {
+					let propSlice = propItem.slice as any[]
 					if (p.path) {
 						let display = p.display
 						if (!display) {
 						display = p.path.replace(/(.*?)([^\/]*)(\.md)/,"$2")
 						}
-						p.display = display.slice(...propItem.slice)
+						p.display = display.slice(...propSlice)
 					} else {
-						p = p.slice(...propItem.slice)
+						p = p.slice(...propSlice)
 					}
 					return p
 					})
@@ -2257,7 +2278,7 @@ class API {
 						display = p.path.replace(/(.*?)([^\/]*)(\.md)/,"$2")
 						}
 
-						propItem.replace.forEach(r => {
+						propItem.replace!.forEach(r => {
 							if (r[2] == "icon") {
 								let iconEl = getIcon(r[1])
 								if (iconEl) r[1] = iconEl.outerHTML.replace("svg-icon", "svg-icon dv-tag dv-tag-" + r[0])
@@ -2265,7 +2286,7 @@ class API {
 							p.display = display.replace(...r)
 						}) 
 					} else {
-						propItem.replace.forEach(r => {
+						propItem.replace!.forEach(r => {
 							if (r[2] == "icon") {
 								
 								let iconEl = getIcon(r[1])
@@ -2565,7 +2586,7 @@ class API {
 				if (propName == "slider") {
 
 					let propSliderVal = propItem.propVal
-					let propMax = propItem.propMax
+					let propMax = propItem.propMax ?? 0
 
 					let max = p[propMax]
 
@@ -3170,58 +3191,152 @@ async editProp (type: string, path: string, prop: string) {
 		let addNewButton = settings["add new note button"]
 		let fullWidth = settings["full width"]
 
-		if (addNewButton) {
-			let noteName = settings["new note name"]
-			let noteTemplate = settings["new note template"]
-			let noteFolder = settings["new note folder"]
-			if (!noteName) noteName = "New note"
-			let args = {
-				noteName, 
-				noteTemplate, 
-				noteFolder
+
+		let buttonPanelTop = viewContainer.createEl("div")
+		let viewContainerInner = viewContainer.createEl("div")
+		let buttonPanelBottom = viewContainer.createEl("div")
+
+
+		
+
+
+		let addButtonsToPanel = async (panel: HTMLElement) => {
+			if (addNewButton) {
+				let noteName = settings["new note name"]
+				let noteTemplate = settings["new note template"]
+				let noteFolder = settings["new note folder"]
+				if (!noteName) noteName = "New note"
+				let args = {
+					noteName, 
+					noteTemplate, 
+					noteFolder
+				}
+				await this.newEntryButton(args, panel)
 			}
-			await this.newEntryButton(args, viewContainer)
+	
+			await this.filterButtonProps(props, pages, panel, id)
+			await this.changeViewButton(panel, id)
+	
+			if (view == "list") {
+				await this.sortButton(props, panel, id)
+			}
+	
+			await this.refreshButton(panel)
+	
+			if (paginationNum) {
+				await this.paginationBlock(filteredPages, paginationNum, panel, id)
+			}
+	
+			
+
 		}
+
+
+
+		
 
 		let filteredPages = [...pages]
 		filteredPages = await this.filterProps(props, filteredPages, id)
 
-		await this.filterButtonProps(props, pages, viewContainer, id)
-		await this.changeViewButton(viewContainer, id)
 
-		if (view == "list") {
-			await this.sortButton(props, viewContainer, id)
-		}
+		await addButtonsToPanel(buttonPanelTop)
 
-		await this.refreshButton(viewContainer)
-
-		if (paginationNum) {
-			await this.paginationBlock(filteredPages, paginationNum, viewContainer, id)
-		}
-
-		await this.searchButton(viewContainer, id)
+		await this.searchButton(buttonPanelTop, id)
 		if (dv.current()["show_search_" + id]) {
-			await this.searchInput(viewContainer, id)
+			await this.searchInput(buttonPanelTop, id)
 		}
+		
 
 		if (!view || view == "table") {
-			await this.createTable(props, filteredPages, paginationNum, viewContainer, id, fullWidth, null)
+			await this.createTable(props, filteredPages, paginationNum, viewContainerInner, id, fullWidth, null)
 		
 		} else if (view == "cards") {
-			await this.createTable(props, filteredPages, paginationNum, viewContainer, id, fullWidth, {cards: true, position: cardsPosition, cardsWidth})
+			await this.createTable(props, filteredPages, paginationNum, viewContainerInner, id, fullWidth, {cards: true, position: cardsPosition, cardsWidth})
 		
 		} else if (view == "list") {
-			await this.createList(props, pages, filteredPages, paginationNum, viewContainer, id)
+			await this.createList(props, pages, filteredPages, paginationNum, viewContainerInner, id)
 		}
+
+		if (settings["button panel below"]) {
+			await addButtonsToPanel(buttonPanelBottom)
+		}
+
+
 
 		
 
-		let search = viewContainer.querySelector(".dvit-search-input")
+		
+
+		let search = buttonPanelTop.querySelector(".dvit-search-input")
 		if(search) {
 			search.focus()
 		} 
 
 		
+	}
+
+
+
+
+
+	async renderGallery(dv: any, paginationNum: number) {
+		this.dv = dv
+		let current = dv.current()
+		let filterFolder = current.filter_gallery_folder
+		let imageFiles = this.app.vault.getFiles()
+			.filter(f =>  f.extension == "jpg" ||
+				f.extension == "jpeg" ||
+				f.extension == "png" ||
+				f.extension == "gif" ||
+				f.extension == "svg" ||
+				f.extension == "webp"
+				
+			)
+
+		let folderPropObj: PropObject = {prop: "folder", fuzzySearch: true, icon: "folder", name: " "}
+		await this.filterButton(folderPropObj, imageFiles, dv.container, "gallery")
+
+		imageFiles = imageFiles.filter(f => {
+			let folderFilter = true
+			if (filterFolder) {
+				folderFilter = f.parent!.path == filterFolder	
+			}
+			return folderFilter
+		}
+		)
+
+		await this.refreshButton(dv.container)
+		await this.paginationBlock(imageFiles, paginationNum, dv.container, "gallery")
+		imageFiles = this.paginate(imageFiles, paginationNum, "gallery")
+		
+		
+		let imageblock = ""
+		for (let file of imageFiles) {
+			
+			let image = dv.fileLink(file.path, true)
+			imageblock = imageblock + "<span class='gallery-image'>" + image + "</span>"
+		}
+		dv.paragraph(imageblock)
+
+		let imageEls = document.querySelectorAll(".gallery-image > span")
+		for (let i of imageEls) {
+			let imageEl = i as HTMLElement
+			imageEl.onclick = async (e) => {
+				let path = imageEl.getAttribute("src") ?? ""
+				let file = this.app.vault.getAbstractFileByPath(path) as TFile
+				let leaf = this.app.workspace.getLeaf()
+
+				if (e.ctrlKey && e.altKey && e.shiftKey) {
+					leaf = this.app.workspace.getLeaf("window")
+				} else if (e.ctrlKey && e.altKey) {
+					leaf = this.app.workspace.getLeaf("split")
+				} else if (e.ctrlKey) {
+					leaf = this.app.workspace.getLeaf("tab")
+				}
+
+				await leaf.openFile(file)
+			}
+		}
 	}
 
 
