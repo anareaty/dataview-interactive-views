@@ -659,3 +659,7 @@ body
   display: inline-block;
   padding: 3px;
 }
+
+.dv-table-wrapper.cards td:has(.hide-in-cards-view) {
+  display: none;
+}
