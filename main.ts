@@ -3353,11 +3353,12 @@ async editProp (type: string, path: string, prop: string) {
 			list = list.sort((l: any) => l.link)
 		}
 
-
+		
 		if (paginationNum) {
 			await this.paginationBlock(list, paginationNum, dv.container, id)
 			list = this.paginate(list, paginationNum, id)
 		}
+		await this.refreshButton(dv.container)
 
 		//@ts-ignore
 		let listCalloutPlugin = this.app.plugins.plugins["obsidian-list-callouts"]
