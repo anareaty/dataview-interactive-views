@@ -3344,9 +3344,10 @@ async editProp (type: string, path: string, prop: string) {
 	async renderList (settings: any, list: any, dv: any) {
 		this.dv = dv
 
-		let groupByFile = settings["group by file"]
+		let groupByFile = settings["group by file"] ?? false
 		let paginationNum = settings["entries on page"]
 		let id = settings["id"] ?? "no-id"
+		let group = settings["group"]
 
 
 		if (groupByFile) {
@@ -3385,17 +3386,17 @@ async editProp (type: string, path: string, prop: string) {
 				return l
 			})
 		}
-		
-    
 
 
-
-		
-
-
-
-		
-		dv.taskList(list, groupByFile)
+		if (group) {
+			list = list.groupBy((l:any) => l[group]).sort((g:any) => window.moment(g.key.subpath, "DD MMMM YYYY — dddd").unix(), "desc")
+			for (let l of list) {
+				dv.el("h4", l.key)
+				dv.taskList(l.rows, groupByFile)
+			}
+		} else {
+			dv.taskList(list, groupByFile)
+		}
 
 	}
 
