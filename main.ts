@@ -3350,42 +3350,25 @@ async editProp (type: string, path: string, prop: string) {
 		let group = settings["group"]
 
 
+		
+		
+
 		if (groupByFile) {
 			list = list.sort((l: any) => l.link)
 		}
 
-		
-		if (paginationNum) {
-			await this.paginationBlock(list, paginationNum, dv.container, id)
-			list = this.paginate(list, paginationNum, id)
+
+
+		const addButtonsToPanel = async (panel: HTMLElement) => {
+			if (paginationNum) {
+				await this.paginationBlock(list, paginationNum, panel, id)
+				list = this.paginate(list, paginationNum, id)
+			}
+			await this.refreshButton(panel)
 		}
-		await this.refreshButton(dv.container)
 
-		//@ts-ignore
-		let listCalloutPlugin = this.app.plugins.plugins["obsidian-list-callouts"]
-
-		if (listCalloutPlugin) {
-			let listCalloutSettings = listCalloutPlugin.settings
-
-			list = list.map((l: any) => {
-				for (let setting of listCalloutSettings) {
-					let char = setting.char
-
-					if (l.text.startsWith(char)) {
-						let calloutIconName = setting.icon
-						let calloutColor = setting.color
-
-						if (calloutIconName) {
-							let calloutIcon = getIcon(calloutIconName)!.outerHTML
-							l.text = '<span class="lc-li-wrapper" style="--lc-callout-color: ' + calloutColor + ';">' + l.text.replace(char, '<span class="lc-list-marker">' + calloutIcon + '</span>') + '</span>'
-						} else {
-							l.text = '<span class="lc-li-wrapper" style="--lc-callout-color: ' + calloutColor + ';">' + l.text.replace(char, '<span class="lc-list-marker">' + char + '</span>') + '</span>'
-						}
-					}
-				}
-				return l
-			})
-		}
+		let buttonPanelTop = dv.container.createEl("div")
+		await addButtonsToPanel(buttonPanelTop)
 
 
 		if (group) {
@@ -3396,6 +3379,13 @@ async editProp (type: string, path: string, prop: string) {
 			}
 		} else {
 			dv.taskList(list, groupByFile)
+		}
+
+
+
+		if (settings["button panel below"]) {
+			let buttonPanelBottom = dv.container.createEl("div")
+			await addButtonsToPanel(buttonPanelBottom)
 		}
 
 	}
