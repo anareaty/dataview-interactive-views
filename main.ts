@@ -1,4 +1,4 @@
-import { App, Modal, FuzzySuggestModal, Plugin, PluginSettingTab, setTooltip, Setting, SuggestModal, setIcon, getIcon, FuzzyMatch, TFile} from 'obsidian';
+import { App, Modal, FuzzySuggestModal, Plugin, PluginSettingTab, setTooltip, Setting, SuggestModal, setIcon, getIcon, FuzzyMatch, TFile, TextComponent} from 'obsidian';
 import * as Dataview from "obsidian-dataview"
 
 interface MyPluginSettings {
@@ -289,6 +289,79 @@ class MyTextInputModal extends Modal {
 
 
 
+class SelectionInputModal extends Modal {
+	resolve: any
+	reject:any
+	name: string
+	defaultVal: string
+	result: string
+	values: string[]
+	names?: string[]
+
+	constructor(app: App, resolve: any, reject:any, name: string, values: string[], names?: string[], defaultVal?: string) {
+	  super(app);
+	  this.resolve = resolve
+	  this.reject = reject
+	  this.name = name
+	  this.defaultVal = defaultVal || ""
+	  this.values = values
+	  this.names = names
+	  this.result = this.defaultVal
+	  this.eventInput = this.eventInput.bind(this)
+	}
+	eventInput(e: KeyboardEvent) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			this.resolve(this.result)
+			this.close()
+		}
+	}
+	onOpen() {
+
+		this.modalEl.style.width = "400px";
+		const {contentEl} = this
+		contentEl.createEl("h1", {text: this.name})
+		const selectSetting = new Setting(contentEl)
+		selectSetting.settingEl.style.display = "grid";
+		selectSetting.addDropdown(drop => {
+			this.values.forEach(val => {
+				let name = val
+				if (this.names) {
+					name = this.names[this.values.indexOf(val)]
+				}
+				drop.addOption(val, name)
+			})
+			drop.onChange((value) => {
+				this.result = value
+			})
+			drop.setValue(this.defaultVal)
+			drop.selectEl.style.width = "100%";
+		})
+
+
+		new Setting(contentEl).addButton((btn) => btn
+		.setButtonText("Сохранить")
+		.setCta()
+		.onClick(() => {
+			this.resolve(this.result)
+			this.close()
+		}))
+		contentEl.addEventListener("keydown", this.eventInput)
+	}
+	onClose() {
+		const {contentEl} = this
+		contentEl.empty()
+		this.contentEl.removeEventListener("keydown", this.eventInput)
+		this.reject("Not submitted") 
+	} 
+}
+
+
+
+
+
+
+
 
 class MyNumberInputModal extends Modal {
 	resolve: any
@@ -403,6 +476,98 @@ class MyDateInputModal extends Modal {
 			text.inputEl.style.width = "100%";
 			text.inputEl.type = "date"
 		})
+		new Setting(contentEl).addButton((btn) => btn
+		.setButtonText("Сохранить")
+		.setCta()
+		.onClick(() => {
+			this.resolve(this.result)
+			this.close()
+		}))
+		contentEl.addEventListener("keydown", this.eventInput)
+	}
+	onClose() {
+		const {contentEl} = this
+		contentEl.empty()
+		this.contentEl.removeEventListener("keydown", this.eventInput)
+		this.reject("Not submitted") 
+	} 
+}
+
+
+
+
+
+
+class DatePeriodInputModal extends Modal {
+	resolve: any
+	reject:any
+	name: string
+	defaultVal: string
+	result: {start: string, end: string}
+	startText: TextComponent
+	endText: TextComponent
+	constructor(app: App, name: string, defaultVal: string, resolve: any, reject:any) {
+	  super(app);
+	  this.resolve = resolve
+	  this.reject = reject
+	  this.name = name
+	  this.defaultVal = defaultVal 
+	  this.result = {start: "", end: ""}
+	  this.eventInput = this.eventInput.bind(this)
+	}
+	eventInput(e: KeyboardEvent) {
+		if (e.key === "Enter") {
+			e.preventDefault();
+			this.resolve(this.result)
+			this.close()
+		}
+	}
+	onOpen() {
+		const {contentEl} = this
+		contentEl.classList.add("date-input-modal")
+		contentEl.createEl("h1", {text: this.name})
+
+		const startInputSetting = new Setting(contentEl)
+		startInputSetting.setName("Start date")
+		startInputSetting.addText((text) => {
+			this.startText = text
+			text.setValue(this.defaultVal)
+			this.result.start = this.defaultVal
+			text.onChange((value) => {
+			   	this.result.start = value
+			   	if (this.result.start != "") {
+					this.endText.inputEl.setAttribute("min", this.result.start)
+				} else {
+					this.endText.inputEl.removeAttribute("min")
+				}
+			})
+			text.inputEl.style.width = "120px";
+			text.inputEl.type = "date"
+		})
+
+
+
+
+		const endInputSetting = new Setting(contentEl)
+		endInputSetting.setName("End date")
+		endInputSetting.addText((text) => {
+			this.endText = text
+			text.setValue(this.defaultVal)
+			this.result.end = this.defaultVal
+			text.onChange((value) => {
+			    this.result.end = value
+			    if (this.result.end != "") {
+					this.startText.inputEl.setAttribute("max", this.result.end)
+				} else {
+					this.startText.inputEl.removeAttribute("max")
+				}
+			})
+			text.inputEl.style.width = "120px";
+			text.inputEl.type = "date"
+		})
+
+
+
 		new Setting(contentEl).addButton((btn) => btn
 		.setButtonText("Сохранить")
 		.setCta()
@@ -633,6 +798,18 @@ class API {
 	}
 
 
+
+	async selectSuggester(name: string, values: string[], names?: string[], defaultVal?: string) {
+		if (!defaultVal) {defaultVal = ""}
+		let data = new Promise((resolve, reject) => {
+			new SelectionInputModal(this.app, resolve, reject, name, values, names, defaultVal).open()  
+		}).catch((e) => {console.log(e)})
+		return data
+	}
+
+
+
+
 	async multiSuggestDouble(header: string, values: string[], names: string[], existingValues: any): Promise<MultiFilter> {
 		let data: Promise<MultiFilter> = new Promise((resolve, reject) => {
 			new MyMultiSuggestModal(this.app, header, values, names, existingValues, resolve, reject).open()  
@@ -675,6 +852,137 @@ class API {
 		}).catch((e) => {console.log(e)})
 		return data
 	}
+
+
+	async datePeriodInput(name: string, defaultVal: string){
+		let data = new Promise((resolve, reject) => {
+			new DatePeriodInputModal(this.app, name, defaultVal, resolve, reject).open()  
+		}).catch((e) => {console.log(e)})
+		return data
+	}
+
+
+
+
+	async dateFilterInput(name: string, defaultVal: string) {
+		if (!defaultVal) {defaultVal = ""}
+	
+		let selection = await this.suggester(["-all-", "-", "day", "week", "month", "year", "period"])
+
+		let dateString: any = selection
+
+		if (selection == "day") {
+			let daySelection = await this.suggester(["today", "tomorrow", "yesterday", "date"])
+			if (daySelection == "date") {
+				let date = await this.dateInput(name, defaultVal) || ""
+				dateString = "date:" + date
+			} else {
+				dateString = "relative:" + daySelection
+			}
+			
+		} else if (selection == "period") {
+			let period: any = await this.datePeriodInput(name, defaultVal) || ""
+			if (period != "") {
+				dateString = "period:start:" + period.start + ":end:" + period.end
+			}
+
+
+
+
+
+		} else if (selection == "week") {
+			let weekSelection = await this.suggester(["current week", "next week", "last week", "select"])
+			if (weekSelection == "select") {
+				let currentYear = this.dv.date("now").weekYear
+				let currentWeek = this.dv.date("now").weekNumber
+				let currentWeekString = currentYear + "W" + currentWeek
+				let weekValues = []
+				let weekNames = []
+
+				for (let i = -1; i <= 1; i++) {
+					let yearString = currentYear + i 
+					let weeksInYear = this.dv.date(yearString + "-01-01").weeksInWeekYear
+
+
+					for (let week = 1; week <= weeksInYear; week++) {
+						
+						let weekNum = week + ""
+						if (weekNum.length == 1) weekNum = "0" + weekNum
+						let weekVal = yearString + "W" + weekNum
+						weekValues.push(weekVal)
+						let monday = window.moment(weekVal).format("D MMMM")
+						let sunday = window.moment(weekVal).day(7).format("D MMMM")
+						let weekName = yearString + " week " + week + " (" + monday + " — " + sunday + ")"
+						weekNames.push(weekName)
+					}
+				}
+
+
+
+
+				let week = await this.selectSuggester("Week", weekValues, weekNames, currentWeekString)
+				dateString = "week:" + week
+			} else {
+				dateString = "relative:" + weekSelection
+			}
+
+
+
+
+		} else if (selection == "month") {
+			let monthSelection = await this.suggester(["current month", "next month", "last month", "select"])
+			if (monthSelection == "select") {
+				let currentYear = this.dv.date("now").year
+				let monthValues = []
+				let monthNames = []
+				for (let i = -10; i <= 10; i++) {
+					let yearString = currentYear + i + ""
+					for (let month = 1; month <= 12; month++) {
+						let monthNum = month + ""
+						if (monthNum.length == 1) monthNum = "0" + monthNum
+						let monthVal = yearString + "-" + monthNum
+						monthValues.push(monthVal)
+						let monthString = this.dv.date(monthVal).monthLong
+						monthString = monthString[0].toUpperCase() + monthString.slice(1) + " " + yearString
+						monthNames.push(monthString)
+					}
+				}
+
+				let currentMonth = this.dv.date("now").month + ""
+				if (currentMonth.length == 1) currentMonth = "0" + currentMonth
+				let currentMonthVal = currentYear + "-" + currentMonth
+
+				let month = await this.selectSuggester("Month", monthValues, monthNames, currentMonthVal)
+				dateString = "month:" + month
+			} else {
+				dateString = "relative:" + monthSelection
+			}
+
+
+
+
+		} else if (selection == "year") {
+			let yearSelection = await this.suggester(["current year", "next year", "last year", "select"])
+			if (yearSelection == "select") {
+				let currentYear = this.dv.date("now").year
+				let yearArr = []
+				for (let i = -100; i <= 100; i++) {
+					yearArr.push(currentYear + i + "")
+				}
+
+				let year = await this.selectSuggester("Year", yearArr, yearArr, currentYear + "")
+				dateString = "year:" + year
+			} else {
+				dateString = "relative:" + yearSelection
+			}
+		} 
+
+
+		return dateString
+	}
+
+
+
 
 
 	async taskListModal(page: any) {
@@ -1257,22 +1565,237 @@ class API {
 			} else return filteredPages
 		}
 		
+
+
+
+
+
+
+
 		if (propType == "date") {
 			if (filter == "-") {
 				return filteredPages.filter(p => getVal(p, prop) === undefined)
+
+
 			} else if (filter != "all" && filter != null) {
-			  if (filter.isLuxonDateTime) {
-				filter = filter.toFormat("yyyy-MM-dd")
-			  }
-			  return filteredPages.filter(p => {
-				let val = getVal(p, prop)
-				if (val) {
-				  return val.toFormat("yyyy-MM-dd") == filter
+
+				if (filter.startsWith("date:")) {
+					let filterDate = filter.replace("date:", "")
+					if (filterDate.isLuxonDateTime) {
+						filterDate = filterDate.toFormat("yyyy-MM-dd")
+					}
+					return filteredPages.filter(p => {
+						let val = getVal(p, prop)
+						if (val) {
+							return val.toFormat("yyyy-MM-dd") == filterDate
+						}
+						else return false
+					})
+				} 
+
+				else if (filter.startsWith("period:")) {
+					let filterMatch = filter.match(/(period:start:)([^:]*)(:end:)(.*)/)
+					if (filterMatch) {
+						let filterStart = filterMatch[2]
+						let filterEnd = filterMatch[4]
+						let startDate = dv.date(filterStart)
+						let endDate = dv.date(filterEnd)
+
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								if (startDate && endDate) {
+									return val.ts >= startDate.ts && val.ts <= endDate.ts
+								} else if (startDate) {
+									return val.ts >= startDate.ts
+								} else if (endDate) {
+									return val.ts <= endDate.ts
+								} else {
+									return true
+								}
+							}
+							else return false
+						})
+						
+					} else return filteredPages
+
+
+
+
+
+				} else if (filter.startsWith("year:")) {
+					let year = filter.replace("year:", "")
+
+					return filteredPages.filter(p => {
+						let val = getVal(p, prop)
+						if (val) {
+							return val.toFormat("yyyy") == year
+						}
+						else return false
+					})
+
+
+
+
+
+				} else if (filter.startsWith("month:")) {
+					let month = filter.replace("month:", "")
+
+					return filteredPages.filter(p => {
+						let val = getVal(p, prop)
+						if (val) {
+							return val.toFormat("yyyy-MM") == month
+						}
+						else return false
+					})
+
+
+
+
+
+				} else if (filter.startsWith("week:")) {
+					let week = filter.replace("week:", "")
+					return filteredPages.filter(p => {
+						let val = getVal(p, prop)
+						if (val) {
+							let weekNum = val.weekNumber + ""
+							if (weekNum.length == 1) weekNum = "0" + weekNum
+							return val.weekYear + "W" + weekNum == week
+						}
+						else return false
+					})
+
+
+
+
+					
+				} else if (filter.startsWith("relative:")) {
+					let relativeDate = filter.replace("relative:", "")
+					let today = dv.date("today")
+
+					if (relativeDate == "today") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toISODate() == today.toISODate()
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "tomorrow") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toISODate() == dv.date("tomorrow").toISODate()
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "yesterday") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toISODate() == dv.date("yesterday").toISODate()
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "current week") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("W") == today.toFormat("W")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "next week") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("W") == today.plus(dv.duration("1 week")).toFormat("W")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "last week") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("W") == today.minus(dv.duration("1 week")).toFormat("W")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "current month") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy-MM") == today.toFormat("yyyy-MM")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "next month") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy-MM") == today.plus(dv.duration("1 month")).toFormat("yyyy-MM")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "last month") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy-MM") == today.minus(dv.duration("1 month")).toFormat("yyyy-MM")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "current year") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy") == today.toFormat("yyyy")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "next year") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy") == today.plus(dv.duration("1 year")).toFormat("yyyy")
+							}
+							else return false
+						})
+					}
+					else if (relativeDate == "last year") {
+						return filteredPages.filter(p => {
+							let val = getVal(p, prop)
+							if (val) {
+								return val.toFormat("yyyy") == today.minus(dv.duration("1 year")).toFormat("yyyy")
+							}
+							else return false
+						})
+					}
 				}
-				else return false
-			  })
-			} else return filteredPages
+			} 
+			return filteredPages
 		}
+
+
+
+
+
+
+
+
+
+
+
 		
 		if (propType == "datetime") {
 			if (filter == "-") {
@@ -1373,7 +1896,7 @@ class API {
 			}
 		}
 
-		if (propType == "number") {
+		else if (propType == "number") {
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
 			let propName = "filter_" + id + "_" + prop
 			let values = pages.map(p => getVal(p, prop))
@@ -1404,7 +1927,32 @@ class API {
 			}
 		}
 
-		if (propType == "date" || propType == "datetime") {
+
+		else if (propType == "date") {
+			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
+			let propName = "filter_" + id + "_" + prop
+
+			let val = await this.dateFilterInput("Дата", "") || ""
+
+			if (val == "all") {
+				await this.app.fileManager.processFrontMatter(currentFile, (frontmatter) => { 
+					delete frontmatter[propName]
+					frontmatter[paginationProp] = 0
+				})
+				
+			} else {
+				await this.app.fileManager.processFrontMatter(currentFile, (frontmatter) => { 
+					frontmatter[propName] = val
+					frontmatter[paginationProp] = 0
+				})
+			}
+
+
+		}
+
+		
+		/*
+		else if (propType == "date" || propType == "datetime") {
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
 			let propName = "filter_" + id + "_" + prop
 			let values = pages.map(p => {
@@ -1453,9 +2001,16 @@ class API {
 					frontmatter[paginationProp] = 0
 				})
 			}
-		}
+		}*/
+
+
+
+
+
+
+
 		
-		if (propType == "multitext" && !multiSelect) {
+		else if (propType == "multitext" && !multiSelect) {
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
 			let propName = "filter_" + id + "_" + prop
 			let filter = current[propName]
@@ -1525,7 +2080,7 @@ class API {
 			}
 		}
 
-		if (propType == "multitext" && multiSelect) {
+		else if (propType == "multitext" && multiSelect) {
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
 			let includePropName = "filter_include_" + id + "_" + prop
 			let excludePropName = "filter_exclude_" + id + "_" + prop
@@ -1624,7 +2179,7 @@ class API {
 			}
 		}
 
-		if (propType == "checkbox") {
+		else if (propType == "checkbox") {
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
 			let propName = "filter_" + id + "_" + prop
 
@@ -1644,7 +2199,7 @@ class API {
 			})
 		}
 
-		if (p.prop == "file.tasks") {
+		else if (p.prop == "file.tasks") {
 			let propName = "filter_" + id +"_file.tasks"
 			let filter = current[propName]
 			let currentFile = this.app.vault.getAbstractFileByPath(current.file.path) as TFile
@@ -3175,11 +3730,12 @@ async editProp (type: string, path: string, prop: string) {
 
 
 
-	async renderView (settings: any, props: any, pages: any, dv:any) {
+	async renderView (settings: any, props: any, pages: any, dv:any, container: HTMLElement) {
+		if (!container) container = dv.container
 		if (!dv.current()) return
 		this.dv = dv
 		let id = settings["id"] ?? "no-id"
-		let viewContainer = dv.container.createEl("div", {cls: "dvit-view-id-" + id})
+		let viewContainer = container.createEl("div", {cls: "dvit-view-id-" + id})
 		let sortProp = dv.current()["sort_" + id]
 		let sortDir = dv.current()["sort_direction_" + id]
 		if (!sortDir) sortDir = "asc"
@@ -3267,7 +3823,7 @@ async editProp (type: string, path: string, prop: string) {
 
 		
 
-		let search = buttonPanelTop.querySelector(".dvit-search-input")
+		let search = buttonPanelTop.querySelector(".dvit-search-input") as HTMLInputElement
 		if(search) {
 			search.focus()
 		} 
