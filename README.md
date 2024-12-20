@@ -1,5 +1,5 @@
 # Интерактивные таблицы для Dataview
-[README on English](dataview-interactive-views)
+[README on English](#dataview-interactive-views)
 
 https://github.com/user-attachments/assets/0855c051-33db-4808-ac86-1928d32c5353
 
