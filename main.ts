@@ -2239,8 +2239,8 @@ class API {
 
 	// Button to create new notes
 
-	async newEntryButton(args: {noteName:string; noteTemplate:string; noteFolder:string}, container: HTMLElement) {
-		const { noteName, noteTemplate, noteFolder } = args
+	async newEntryButton(args: {noteName:string; noteTemplate:string; noteFolder:string; noteTemplateText:string}, container: HTMLElement) {
+		const { noteName, noteTemplate, noteFolder, noteTemplateText } = args
 
 		const checkIfExist = (num: number): string => {
 			let numString = ""
@@ -2264,6 +2264,8 @@ class API {
 			let data = ""
 			if (template) {
 				data = await this.app.vault.read(template)
+			} else if (noteTemplateText) {
+				data = noteTemplateText
 			}
 			let path = checkIfExist(0)
 			let file = await this.app.vault.create(path, data)
@@ -3761,11 +3763,13 @@ async editProp (type: string, path: string, prop: string) {
 				let noteName = settings["new note name"]
 				let noteTemplate = settings["new note template"]
 				let noteFolder = settings["new note folder"]
+				let noteTemplateText = settings["new note template text"]
 				if (!noteName) noteName = "New note"
 				let args = {
 					noteName, 
 					noteTemplate, 
-					noteFolder
+					noteFolder,
+					noteTemplateText
 				}
 				await this.newEntryButton(args, panel)
 			}
