@@ -706,6 +706,7 @@ interface PropObject {
 	alignBottom?: boolean;
 	ignoreFilter?: boolean;
 	lines?: number;
+	linkImage?: boolean;
 }
 
 interface Link {
