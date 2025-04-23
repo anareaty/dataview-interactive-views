@@ -3157,8 +3157,11 @@ class API {
 
 					editButton.style.cssText = style
 
-
+                    
 					propVal = editButton
+
+				    
+				
 
 					
 
@@ -3215,6 +3218,10 @@ class API {
 					if (propItem.alignBottom) {
 						propVal.classList.add("align-bottom")
 					} 
+
+				if (propItem.linkImage) {
+					editButton.classList.remove("edit-button")
+				}
 
 
 					if (propName == "file.tasks") {
