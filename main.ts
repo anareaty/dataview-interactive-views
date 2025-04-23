@@ -2905,6 +2905,36 @@ class API {
 					} else if (propVal && !propVal.path && propVal.startsWith("http")) {
 						propVal = "![|" + imageWidth + "](" + propVal + ")"
 					} else propVal = ""
+
+				if (propItem.linkImage) {
+					let imageEl = dv.span(propVal).firstChild.firstChild.firstChild.firstChild
+					imageEl.remove()
+
+					let link = dv.fileLink(p.file.path, false)
+					let linkEl = dv.span(link).firstChild.firstChild.firstChild
+                    linkEl.remove()
+
+					linkEl.innerHTML = imageEl.outerHTML
+
+					propVal = linkEl
+
+					/*
+
+					let coverImage = dv.fileLink(dv.current().cover.path, true, 100)
+                    let imageEl = dv.span(coverImage).firstChild.firstChild.firstChild.firstChild
+                    imageEl.remove()
+
+                    let link = dv.fileLink(dv.current().link.path, false)
+                    let linkEl = dv.span(link).firstChild.firstChild.firstChild
+                    linkEl.remove()
+
+                    linkEl.innerHTML = imageEl.outerHTML
+
+                    dv.span(linkEl)
+
+                    */
+					
+				}
 				}
 
 
