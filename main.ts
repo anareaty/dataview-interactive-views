@@ -3220,7 +3220,7 @@ class API {
 					} 
 
 				if (propItem.linkImage) {
-					editButton.classList.remove("edit-button")
+					editButton.classList.add("ignore")
 				}
 
 
@@ -3319,7 +3319,7 @@ class API {
 
 		/* Add actions for editing buttons */
 
-		let editButtons = document.querySelectorAll(".edit-button")
+		let editButtons = document.querySelectorAll(".edit-button:not(.ignore)")
 		for (let b of editButtons) {
 			let button = b as HTMLButtonElement
 			button.onclick = async (event) => {
