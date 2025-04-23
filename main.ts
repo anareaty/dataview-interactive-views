@@ -2917,7 +2917,8 @@ class API {
 
 					linkEl.innerHTML = imageEl.outerHTML
 
-					propVal = linkEl
+					propVal = linkEl.outerHTML
+					
 
 					/*
 
