@@ -2916,7 +2916,12 @@ class API {
 					let linkEl = dv.span(link).firstChild.firstChild.firstChild
                     linkEl.remove()
 
-					linkEl.innerHTML = imageEl.outerHTML
+					
+					if (image.outerHTML) {
+						linkEl.innerHTML = imageEl.outerHTML
+					} else {
+						linkEl.innerHTML = p.file.name
+					}
 
 					propVal = linkEl.outerHTML
 					
