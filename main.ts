@@ -707,6 +707,7 @@ interface PropObject {
 	ignoreFilter?: boolean;
 	lines?: number;
 	linkImage?: boolean;
+	center?: boolean;
 }
 
 interface Link {
@@ -3217,6 +3218,10 @@ class API {
 
 					if (propItem.alignBottom) {
 						propVal.classList.add("align-bottom")
+					} 
+
+				if (propItem.center) {
+						propVal.classList.add("text-align-center")
 					} 
 
 				if (propItem.linkImage) {
