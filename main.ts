@@ -2920,6 +2920,7 @@ class API {
 						imageSpan.firstChild &&
 						imageSpan.firstChild.firstChild &&
 						imageSpan.firstChild.firstChild.firstChild &&
+						imageSpan.firstChild.firstChild.firstChild.firstChild  &&
 						imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML) {
 						imageEl = imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML
 					}
