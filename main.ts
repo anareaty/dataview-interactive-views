@@ -2931,7 +2931,7 @@ class API {
                     linkEl.remove()
 
 					
-					if (imageEl.outerHTML) {
+					if (imageEl != "") {
 						linkEl.innerHTML = imageEl
 					} else {
 						linkEl.innerHTML = p.file.name
