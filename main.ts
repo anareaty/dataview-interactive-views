@@ -2924,6 +2924,10 @@ class API {
 						imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML) {
 						imageEl = imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML
 					}
+
+					if (propVal && !propVal.path && propVal.startsWith("http")) {
+						imageEl = "<img src = '" + propVal + " width = " + imageWidth + "'>"
+					}
 					
 					
 
