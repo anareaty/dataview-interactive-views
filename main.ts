@@ -2901,41 +2901,31 @@ class API {
 				
 				if (propItem.image) {
 				let imageWidth = 100
+				let imageEl = ""
 				if (propItem.width) imageWidth = propItem.width
 				if ( propVal && propVal.path && !propVal.path.endsWith(".md")) {
 						propVal = dv.fileLink(propVal.path, true, imageWidth)
-					} else if (propVal && !propVal.path && propVal.startsWith("http")) {
+					} else if (propVal && typeof propVal == "string"  && propVal.startsWith("http")) {
+						imageEl = "<img src = '" + propVal + "' width = " + imageWidth + "'>"
 						propVal = "![|" + imageWidth + "](" + propVal + ")"
 					} else propVal = ""
 
 
 				
 				if (propItem.linkImage) {
-					
 					let imageSpan = dv.span(propVal)
 					imageSpan.remove()
-
-					let imageEl = ""
-					if (imageSpan && 
-						imageSpan.firstChild &&
-						imageSpan.firstChild.firstChild &&
-						imageSpan.firstChild.firstChild.firstChild &&
-						imageSpan.firstChild.firstChild.firstChild.firstChild  &&
-						imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML) {
-						imageEl = imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML
-					}
-
-					if (propVal && !propVal.path && propVal.startsWith("http")) {
-						imageEl = "<img src = '" + propVal + " width = " + imageWidth + "'>"
+					let imageElement = imageSpan.querySelector("img")
+					
+					if (imageElement) {
+						imageEl = imageElement.outerHTML
 					}
 					
-					
-
 					let link = dv.fileLink(p.file.path, false)
-					let linkEl = dv.span(link).firstChild.firstChild.firstChild
-                    linkEl.remove()
-
-					
+					let linkSpan = dv.span(link)
+					linkSpan.remove()
+					let linkEl = linkSpan.querySelector("a")
+                    
 					if (imageEl != "") {
 						linkEl.innerHTML = imageEl
 					} else {
@@ -2944,22 +2934,6 @@ class API {
 
 					propVal = linkEl.outerHTML
 					
-
-					/*
-
-					let coverImage = dv.fileLink(dv.current().cover.path, true, 100)
-                    let imageEl = dv.span(coverImage).firstChild.firstChild.firstChild.firstChild
-                    imageEl.remove()
-
-                    let link = dv.fileLink(dv.current().link.path, false)
-                    let linkEl = dv.span(link).firstChild.firstChild.firstChild
-                    linkEl.remove()
-
-                    linkEl.innerHTML = imageEl.outerHTML
-
-                    dv.span(linkEl)
-
-                    */
 					
 				}
 				}

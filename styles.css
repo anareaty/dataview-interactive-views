@@ -5,7 +5,7 @@
 .change-view-button-icon,
 .inline-icon,
 .header-icon {
-    --icon-size: 1em;
+    --icon-size: 1em !important;
     position: relative;
     top: 2px;
 }
@@ -120,7 +120,7 @@ button.dvit-button:hover {
     border-radius: 4px;
 }
   
-.edit-button:has(> img:only-child, > .image-embed:only-child) {
+.edit-button:has(> img:only-child, > .image-embed:only-child, > a > img) {
     padding: 0 !important;
     max-width: unset !important;
 }
@@ -322,7 +322,7 @@ Based on Minimal theme by Stephan Ango (@kepano)
 
 body
 {
-  --cards-min-width: 140px;
+  --cards-min-width: 120px;
   --cards-max-width: 1fr;
   --cards-mobile-width: 120px;
   --cards-image-height: 400px;
@@ -389,7 +389,7 @@ body
 
 
 
-.dv-table-wrapper.cards table tbody > tr > td > div:has(img:only-child, .image-embed:only-child) {
+.dv-table-wrapper.cards table tbody > tr > td > div:has(img:only-child, .image-embed:only-child, a > img) {
   padding: 0;
 }
   
@@ -480,7 +480,7 @@ body
       width: 100%;
       padding: 0.25em 0 !important;
       margin: 0 auto !important; }
-    .dv-table-wrapper.cards table tbody > tr > td:has(.edit-button > img:only-child, .edit-button > .image-embed:only-child) {
+    .dv-table-wrapper.cards table tbody > tr > td:has(.edit-button > img:only-child, .edit-button > .image-embed:only-child, .edit-button > a > img) {
       padding: 0 !important;
       background-color: var(--background-secondary);
       display: block;
@@ -662,4 +662,8 @@ body
 
 .dv-table-wrapper.cards td:has(.hide-in-cards-view) {
   display: none;
+}
+
+.text-align-center {
+  text-align: center;
 }
