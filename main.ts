@@ -2908,7 +2908,7 @@ class API {
 						propVal = "![|" + imageWidth + "](" + propVal + ")"
 					} else propVal = ""
 
-				if (propItem.linkImage) {
+				if (propItem.linkImage && dv.span(propVal) && dv.span(propVal).firstChild && dv.span(propVal).firstChild.firstChild && dv.span(propVal).firstChild.firstChild.firstChild && dv.span(propVal).firstChild.firstChild.firstChild.firstChild {
 					let imageEl = dv.span(propVal).firstChild.firstChild.firstChild.firstChild
 					imageEl.remove()
 
