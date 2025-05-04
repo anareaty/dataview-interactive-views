@@ -2908,9 +2908,23 @@ class API {
 						propVal = "![|" + imageWidth + "](" + propVal + ")"
 					} else propVal = ""
 
-				if (propItem.linkImage && dv.span(propVal) && dv.span(propVal).firstChild && dv.span(propVal).firstChild.firstChild && dv.span(propVal).firstChild.firstChild.firstChild && dv.span(propVal).firstChild.firstChild.firstChild.firstChild {
-					let imageEl = dv.span(propVal).firstChild.firstChild.firstChild.firstChild
-					imageEl.remove()
+
+				
+				if (propItem.linkImage) {
+					
+					let imageSpan = dv.span(propVal)
+					imageSpan.remove()
+
+					let imageEl = ""
+					if (imageSpan && 
+						imageSpan.firstChild &&
+						imageSpan.firstChild.firstChild &&
+						imageSpan.firstChild.firstChild.firstChild &&
+						imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML) {
+						imageEl = imageSpan.firstChild.firstChild.firstChild.firstChild.outerHTML
+					}
+					
+					
 
 					let link = dv.fileLink(p.file.path, false)
 					let linkEl = dv.span(link).firstChild.firstChild.firstChild
@@ -2918,7 +2932,7 @@ class API {
 
 					
 					if (imageEl.outerHTML) {
-						linkEl.innerHTML = imageEl.outerHTML
+						linkEl.innerHTML = imageEl
 					} else {
 						linkEl.innerHTML = p.file.name
 					}
